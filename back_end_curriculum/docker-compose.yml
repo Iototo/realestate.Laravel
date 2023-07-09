@@ -1,0 +1,51 @@
+version: "3"
+services:
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=db #mysqlサービス名を指定
+      - PMA_USER=user
+      - PMA_PASSWORD=conviction
+    links:
+      - db
+    ports:
+      - 4040:80
+    volumes:
+      - ./phpmyadmin/sessions:/sessions
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+      - .:/var/www/html
+    restart: always
+    ports: [ "8080:80" ]
+    depends_on: [ "php" ]
+
+  php:
+    build: ./php
+    volumes:
+      - .:/var/www/html
+      - ./php/php.ini:/usr/local/etc/php/conf.d/php.ini
+    depends_on: [ "db" ]
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: conviction
+      MYSQL_DATABASE: convi
+      MYSQL_USER: user
+      MYSQL_PASSWORD: conviction
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db/mysql:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+
+  composer:
+    image: composer
+    command: "composer install"
+    volumes:
+      - ./app:/app
